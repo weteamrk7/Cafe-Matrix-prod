@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Truck, UtensilsCrossed, Check, X, Clock, Trash2, MapPin, ChefHat, Volume2, VolumeX } from "lucide-react";
+import { Truck, UtensilsCrossed, Check, X, Clock, Trash2, MapPin, ChefHat, Volume2, VolumeX, Pencil, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,6 +20,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, isToday, isYesterday } from "date-fns";
 import { useOrderNotification } from "@/hooks/useOrderNotification";
 import { playToastSound } from "@/hooks/useToastSound";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { orderMenuItems } from "@/data/orderMenuData";
 
 interface OrderItem {
   id: string;
@@ -104,6 +110,20 @@ const AdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [notificationEnabled, setNotificationEnabled] = useState(true);
 
+  // State for editing order
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editCustomerName, setEditCustomerName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editOrderType, setEditOrderType] = useState<"dine_in" | "delivery">("dine_in");
+  const [editTableNumber, setEditTableNumber] = useState<string>("");
+  const [editAddress, setEditAddress] = useState<string>("");
+  const [editSpecialInstructions, setEditSpecialInstructions] = useState<string>("");
+  const [editItems, setEditItems] = useState<Omit<OrderItem, "id">[]>([]);
+  const [selectedAddItem, setSelectedAddItem] = useState<string>("");
+  const [selectedAddSize, setSelectedAddSize] = useState<string>("");
+  const [isSaving, setIsSaving] = useState(false);
+
   const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
       .from("orders")
@@ -168,6 +188,164 @@ const AdminOrders = () => {
     toast({ title: "Order deleted" });
     playToastSound();
     fetchOrders();
+  };
+
+  const startEditOrder = (order: Order) => {
+    setEditingOrder(order);
+    setEditCustomerName(order.customer_name);
+    setEditPhone(order.phone);
+    setEditOrderType(order.order_type as "dine_in" | "delivery");
+    setEditTableNumber(order.table_number ? order.table_number.toString() : "");
+    setEditAddress(order.address || "");
+    setEditSpecialInstructions(order.special_instructions || "");
+    
+    // Copy order items to edit state
+    const itemsCopy = (order.order_items || []).map(item => ({
+      item_name: item.item_name,
+      category: item.category,
+      quantity: item.quantity,
+      price: item.price
+    }));
+    setEditItems(itemsCopy);
+    setIsEditOpen(true);
+  };
+
+  const handleIncrementQty = (index: number) => {
+    setEditItems(prev => prev.map((item, idx) => 
+      idx === index ? { ...item, quantity: item.quantity + 1 } : item
+    ));
+  };
+
+  const handleDecrementQty = (index: number) => {
+    setEditItems(prev => prev.map((item, idx) => {
+      if (idx === index) {
+        const newQty = item.quantity - 1;
+        if (newQty <= 0) return null;
+        return { ...item, quantity: newQty };
+      }
+      return item;
+    }).filter(Boolean) as typeof prev);
+  };
+
+  const handleRemoveItem = (index: number) => {
+    setEditItems(prev => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleAddEditItem = () => {
+    if (!selectedAddItem) return;
+    const menuItem = orderMenuItems.find(item => item.id === selectedAddItem);
+    if (!menuItem) return;
+
+    let finalName = menuItem.name;
+    let finalPrice = menuItem.price;
+
+    if (menuItem.sizes && menuItem.sizes.length > 0) {
+      const sizeLabel = selectedAddSize || menuItem.sizes[0].label;
+      const sizeOption = menuItem.sizes.find(s => s.label === sizeLabel);
+      if (sizeOption) {
+        finalName = `${menuItem.name} (${sizeLabel})`;
+        finalPrice = sizeOption.price;
+      }
+    }
+
+    // Check if item already exists in edit list
+    const existingIndex = editItems.findIndex(item => item.item_name === finalName);
+    if (existingIndex > -1) {
+      setEditItems(prev => prev.map((item, idx) => 
+        idx === existingIndex ? { ...item, quantity: item.quantity + 1 } : item
+      ));
+    } else {
+      setEditItems(prev => [
+        ...prev,
+        {
+          item_name: finalName,
+          category: menuItem.category,
+          quantity: 1,
+          price: finalPrice
+        }
+      ]);
+    }
+    
+    // Clear selections
+    setSelectedAddItem("");
+    setSelectedAddSize("");
+  };
+
+  const editTotal = useMemo(() => {
+    return editItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  }, [editItems]);
+
+  const handleSaveEdit = async () => {
+    if (!editingOrder) return;
+    if (!editCustomerName.trim() || !editPhone.trim()) {
+      toast({ title: "Please fill in required fields", variant: "destructive" });
+      return;
+    }
+    if (editOrderType === "delivery" && !editAddress.trim()) {
+      toast({ title: "Please enter delivery address", variant: "destructive" });
+      return;
+    }
+    if (editOrderType === "dine_in" && !editTableNumber.trim()) {
+      toast({ title: "Please enter table number", variant: "destructive" });
+      return;
+    }
+    if (editItems.length === 0) {
+      toast({ title: "Order must have at least one item", variant: "destructive" });
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      // 1. Update orders table
+      const { error: orderError } = await supabase
+        .from("orders")
+        .update({
+          customer_name: editCustomerName.trim(),
+          phone: editPhone.trim(),
+          order_type: editOrderType,
+          table_number: editOrderType === "dine_in" ? parseInt(editTableNumber) : null,
+          address: editOrderType === "delivery" ? editAddress.trim() : null,
+          special_instructions: editSpecialInstructions.trim() || null,
+          total: editTotal,
+        })
+        .eq("id", editingOrder.id);
+
+      if (orderError) throw orderError;
+
+      // 2. Delete all existing order items
+      const { error: deleteError } = await supabase
+        .from("order_items")
+        .delete()
+        .eq("order_id", editingOrder.id);
+
+      if (deleteError) throw deleteError;
+
+      // 3. Insert updated order items
+      const insertItems = editItems.map(item => ({
+        order_id: editingOrder.id,
+        item_name: item.item_name,
+        category: item.category,
+        quantity: item.quantity,
+        price: item.price
+      }));
+
+      const { error: insertError } = await supabase
+        .from("order_items")
+        .insert(insertItems);
+
+      if (insertError) throw insertError;
+
+      toast({ title: "Order updated successfully" });
+      setIsEditOpen(false);
+      setEditingOrder(null);
+      fetchOrders();
+    } catch (err: any) {
+      console.error("Error saving order:", err);
+      toast({ title: "Failed to save order changes", description: err.message, variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
 
@@ -295,6 +473,15 @@ const AdminOrders = () => {
                   <X className="w-4 h-4" />
                 </Button>
               )}
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => startEditOrder(order)}
+                title="Edit Order"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -453,6 +640,253 @@ const AdminOrders = () => {
             : groupedDeliveryOrders.map(renderDateGroup)}
         </TabsContent>
       </Tabs>
+
+      {/* Edit Order Modal */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Order</DialogTitle>
+            <DialogDescription>
+              Modify customer details or order items for this order.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingOrder && (
+            <div className="space-y-6 my-4">
+              {/* Customer Info Section */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Customer Name</Label>
+                  <Input
+                    id="edit-name"
+                    value={editCustomerName}
+                    onChange={(e) => setEditCustomerName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-phone">Phone Number</Label>
+                  <Input
+                    id="edit-phone"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Order Type & Table/Address */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-type">Order Type</Label>
+                  <Select
+                    value={editOrderType}
+                    onValueChange={(val: "dine_in" | "delivery") => setEditOrderType(val)}
+                  >
+                    <SelectTrigger id="edit-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="dine_in">Dine-In</SelectItem>
+                      <SelectItem value="delivery">Delivery</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {editOrderType === "dine_in" ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-table">Table Number</Label>
+                    <Input
+                      id="edit-table"
+                      type="number"
+                      value={editTableNumber}
+                      onChange={(e) => setEditTableNumber(e.target.value)}
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-address">Delivery Address</Label>
+                    <Input
+                      id="edit-address"
+                      value={editAddress}
+                      onChange={(e) => setEditAddress(e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Special Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="edit-instructions">Special Instructions / Notes</Label>
+                <Textarea
+                  id="edit-instructions"
+                  value={editSpecialInstructions}
+                  onChange={(e) => setEditSpecialInstructions(e.target.value)}
+                  rows={2}
+                />
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <h3 className="text-sm font-semibold mb-3">Order Items</h3>
+                
+                {/* Items List */}
+                <div className="space-y-3 mb-4">
+                  {editItems.map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-muted/40 rounded-lg border border-border text-sm"
+                    >
+                      <div className="flex-1 min-w-0 pr-4">
+                        <p className="font-medium text-foreground">{item.item_name}</p>
+                        <p className="text-xs text-muted-foreground">₹{item.price} each</p>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        {/* Qty controller */}
+                        <div className="flex items-center gap-2 bg-background border border-border rounded-full px-2 py-0.5">
+                          <button
+                            type="button"
+                            onClick={() => handleDecrementQty(index)}
+                            className="w-5 h-5 rounded-full hover:bg-muted flex items-center justify-center transition-colors"
+                          >
+                            <Minus className="w-3 h-3 text-muted-foreground" />
+                          </button>
+                          <span className="w-6 text-center font-medium">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleIncrementQty(index)}
+                            className="w-5 h-5 rounded-full hover:bg-muted flex items-center justify-center transition-colors"
+                          >
+                            <Plus className="w-3 h-3 text-muted-foreground" />
+                          </button>
+                        </div>
+                        
+                        <span className="font-semibold w-16 text-right">
+                          ₹{item.price * item.quantity}
+                        </span>
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          onClick={() => handleRemoveItem(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {editItems.length === 0 && (
+                    <p className="text-center py-4 text-sm text-muted-foreground bg-muted/20 rounded-lg border border-dashed border-border">
+                      No items in this order. Add items below.
+                    </p>
+                  )}
+                </div>
+
+                {/* Add Item Section */}
+                <div className="bg-muted/30 p-4 rounded-xl border border-border space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Add Item to Order
+                  </p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="add-item-select" className="text-xs">Select Item</Label>
+                      <Select
+                        value={selectedAddItem}
+                        onValueChange={(val) => {
+                          setSelectedAddItem(val);
+                          // Select default size if item has sizes
+                          const item = orderMenuItems.find(i => i.id === val);
+                          if (item && item.sizes && item.sizes.length > 0) {
+                            setSelectedAddSize(item.sizes[0].label);
+                          } else {
+                            setSelectedAddSize("");
+                          }
+                        }}
+                      >
+                        <SelectTrigger id="add-item-select" className="h-9">
+                          <SelectValue placeholder="Choose menu item..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {orderMenuItems.map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.name} {item.sizes ? "" : `(₹${item.price})`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {selectedAddItem && orderMenuItems.find(i => i.id === selectedAddItem)?.sizes && (
+                      <div className="space-y-1">
+                        <Label htmlFor="add-size-select" className="text-xs">Select Size</Label>
+                        <Select
+                          value={selectedAddSize}
+                          onValueChange={setSelectedAddSize}
+                        >
+                          <SelectTrigger id="add-size-select" className="h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {orderMenuItems
+                              .find(i => i.id === selectedAddItem)
+                              ?.sizes?.map((size) => (
+                                <SelectItem key={size.label} value={size.label}>
+                                  {size.label} (₹{size.price})
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="w-full sm:w-auto mt-2"
+                    onClick={handleAddEditItem}
+                    disabled={!selectedAddItem}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Item
+                  </Button>
+                </div>
+              </div>
+
+              {/* Total Calculation */}
+              <div className="flex justify-between items-center bg-muted/40 p-4 rounded-xl border border-border">
+                <span className="font-medium text-foreground">Estimated Total</span>
+                <span className="text-2xl font-bold text-primary">₹{editTotal}</span>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0 border-t border-border pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsEditOpen(false);
+                setEditingOrder(null);
+              }}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSaveEdit}
+              disabled={isSaving}
+            >
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
