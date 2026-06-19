@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Truck, UtensilsCrossed, CheckCircle, MessageCircle, Package, Tag, X } from "lucide-react";
+import { ArrowLeft, Truck, UtensilsCrossed, CheckCircle, MessageCircle, Package, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -108,13 +108,6 @@ const PARCEL_RATES: Record<string, number> = {
 };
 const DEFAULT_PARCEL_RATE = 10;
 
-// Available coupons
-const COUPONS = [
-  { code: "SAVE10", minOrder: 200, discount: 10, label: "10% off on orders above ₹200" },
-  { code: "SAVE20", minOrder: 500, discount: 20, label: "20% off on orders above ₹500" },
-];
-
-
 const Checkout = () => {
   const { items, totalPrice, clearCart } = useCart();
   const navigate = useNavigate();
@@ -126,8 +119,6 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [needsParcel, setNeedsParcel] = useState(false);
-  const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<typeof COUPONS[0] | null>(null);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -149,30 +140,7 @@ const Checkout = () => {
   // Parcel charge applies automatically for delivery, optionally for dine-in
   const parcelApplies = orderType === "delivery" || (orderType === "dine_in" && needsParcel);
   const parcelAmount = parcelApplies ? calculateParcelCharges() : 0;
-  const subtotalWithParcel = totalPrice + parcelAmount;
-  const couponEligible = orderType === "dine_in";
-  const discountAmount = (couponEligible && appliedCoupon) ? Math.round(subtotalWithParcel * appliedCoupon.discount / 100) : 0;
-  const grandTotal = subtotalWithParcel - discountAmount;
-
-  const handleApplyCoupon = () => {
-    const code = couponCode.trim().toUpperCase();
-    const coupon = COUPONS.find((c) => c.code === code);
-    if (!coupon) {
-      toast({ title: "Invalid coupon code", variant: "destructive" });
-      return;
-    }
-    if (totalPrice < coupon.minOrder) {
-      toast({ title: `Minimum order of ₹${coupon.minOrder} required for this coupon`, variant: "destructive" });
-      return;
-    }
-    setAppliedCoupon(coupon);
-    toast({ title: `Coupon ${coupon.code} applied! ${coupon.discount}% off` });
-  };
-
-  const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponCode("");
-  };
+  const grandTotal = totalPrice + parcelAmount;
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -314,7 +282,7 @@ const Checkout = () => {
           tableNumber: orderType === "dine_in" ? formData.tableNumber : "N/A",
           items: items.map((item) => `${item.quantity}x ${item.name} - ₹${item.price * item.quantity}`).join(", "),
           parcelCharges: parcelApplies ? `₹${parcelAmount}` : "None",
-          coupon: appliedCoupon ? `${appliedCoupon.code} (${appliedCoupon.discount}% = -₹${discountAmount})` : "None",
+          coupon: "None",
           total: `₹${grandTotal}`,
           specialInstructions: formData.specialInstructions.trim() || "None",
         }),
@@ -418,7 +386,7 @@ const Checkout = () => {
               </p>
             </button>
             <button
-              onClick={() => { if (canDeliver) { setOrderType("delivery"); setNeedsParcel(false); setAppliedCoupon(null); setCouponCode(""); } }}
+              onClick={() => { if (canDeliver) { setOrderType("delivery"); setNeedsParcel(false); } }}
               className={`p-6 rounded-xl border-2 transition-all relative ${
                 !canDeliver
                   ? "border-border bg-muted/50 cursor-not-allowed opacity-60"
@@ -497,59 +465,11 @@ const Checkout = () => {
                 <span className="text-foreground">₹{parcelAmount}</span>
               </div>
             )}
-            {appliedCoupon && (
-              <div className="flex justify-between text-sm text-green-600">
-                <span className="flex items-center gap-1">
-                  <Tag className="w-3 h-3" />
-                  Discount ({appliedCoupon.discount}%)
-                </span>
-                <span>-₹{discountAmount}</span>
-              </div>
-            )}
             <div className="flex justify-between font-semibold border-t border-border pt-2">
               <span>Total</span>
               <span className="text-primary">₹{grandTotal}</span>
             </div>
           </div>
-
-          {/* Coupon Section - Dine In only */}
-          {orderType === "dine_in" && (
-            <div className="border-t border-border mt-3 pt-3">
-              {appliedCoupon ? (
-                <div className="flex items-center justify-between bg-green-500/10 border border-green-500/20 rounded-lg p-3">
-                  <div className="flex items-center gap-2">
-                    <Tag className="w-4 h-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-600">{appliedCoupon.code} applied</span>
-                  </div>
-                  <button onClick={handleRemoveCoupon} className="text-muted-foreground hover:text-foreground">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Enter coupon code"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
-                      className="text-sm"
-                      maxLength={20}
-                    />
-                    <Button type="button" variant="outline" size="sm" onClick={handleApplyCoupon} className="shrink-0">
-                      Apply
-                    </Button>
-                  </div>
-                  <div className="space-y-1">
-                    {COUPONS.map((c) => (
-                      <p key={c.code} className="text-xs text-muted-foreground">
-                        <span className="font-medium text-foreground">{c.code}</span> — {c.label}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Parcel info for delivery */}
