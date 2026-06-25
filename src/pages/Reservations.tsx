@@ -202,7 +202,7 @@ const Reservations = () => {
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="+91 98765 43210"
+                  placeholder="+91 84313 56962"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   required
@@ -359,8 +359,8 @@ const Reservations = () => {
 
           <p className="text-center text-sm text-muted-foreground">
             For parties larger than 10, please call us at{" "}
-            <a href="tel:+919876543210" className="text-foreground font-medium hover:underline">
-              +91 98765 43210
+            <a href="tel:+918431356962" className="text-foreground font-medium hover:underline">
+              +91 84313 56962
             </a>
           </p>
         </motion.form>

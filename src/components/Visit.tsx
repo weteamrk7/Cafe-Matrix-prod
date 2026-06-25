@@ -62,7 +62,7 @@ const Visit = () => {
                 </div>
                 <div>
                   <h4 className="font-medium text-foreground mb-1">Contact</h4>
-                  <p className="text-foreground font-medium">+91 98765 43210</p>
+                  <a href="tel:+918431356962" className="text-foreground font-medium hover:underline">+91 84313 56962</a>
                 </div>
               </div>
             </div>

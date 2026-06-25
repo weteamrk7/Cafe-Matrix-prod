@@ -652,7 +652,7 @@ const AdminBilling = () => {
                   <Input
                     id="billing-phone"
                     type="tel"
-                    placeholder="9876543210"
+                    placeholder="8431356962"
                     maxLength={10}
                     value={phoneNumber}
                     onChange={(e) => {
