@@ -118,6 +118,7 @@ const Checkout = () => {
   const [orderType, setOrderType] = useState<OrderType>(canDeliver ? "delivery" : "dine_in");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
+  const [finalTotal, setFinalTotal] = useState<number>(0);
   const [needsParcel, setNeedsParcel] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -291,6 +292,7 @@ const Checkout = () => {
       // Send automated WhatsApp confirmation (non-blocking, runs in background)
       sendWhatsAppConfirmation(order);
 
+      setFinalTotal(grandTotal);
       setOrderSuccess(true);
       clearCart();
       
@@ -326,7 +328,7 @@ const Checkout = () => {
             A WhatsApp confirmation has been sent to <span className="font-medium text-foreground">{formData.phone}</span>. You will receive it shortly! 🎉
           </p>
           
-          {orderType === "dine_in" && grandTotal >= 449 && (
+          {orderType === "dine_in" && finalTotal >= 449 && (
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
@@ -341,12 +343,12 @@ const Checkout = () => {
                     Matrix Dice Challenge!
                   </h3>
                   <p className="text-xs text-muted-foreground mb-4">
-                    Since your dine-in bill is ₹{grandTotal}, you qualify for one free roll. Win a guaranteed reward!
+                    Since your dine-in bill is ₹{finalTotal}, you qualify for one free roll. Win a guaranteed reward!
                   </p>
                   <Button
                     variant="hero"
                     className="w-full bg-gradient-to-r from-accent to-orange-500 hover:from-accent/90 hover:to-orange-500/90 text-white font-medium shadow-md shadow-accent/20"
-                    onClick={() => navigate(`/dice?amount=${grandTotal}`)}
+                    onClick={() => navigate(`/dice?amount=${finalTotal}`)}
                   >
                     Roll the Dice Now!
                   </Button>
