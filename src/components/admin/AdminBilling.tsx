@@ -58,6 +58,8 @@ const AdminBilling = () => {
   // Validation
   const [phoneError, setPhoneError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [showDiceModal, setShowDiceModal] = useState(false);
+  const [lastOrderDetails, setLastOrderDetails] = useState<{ id: string; total: number } | null>(null);
 
   // Filter menu items based on search + category
   const filteredMenuItems = useMemo(() => {
@@ -269,8 +271,14 @@ const AdminBilling = () => {
       });
       playToastSound();
 
-      // Clear the bill
-      handleClearBill();
+      // Check if eligible for Dice Challenge (Dine-in and Total >= 449)
+      if (deliveryAmount === 0 && grandTotal >= 449) {
+        setLastOrderDetails({ id: order.id, total: grandTotal });
+        setShowDiceModal(true);
+      } else {
+        // Clear the bill if not eligible
+        handleClearBill();
+      }
     } catch (error) {
       console.error("Error saving order:", error);
       toast({
@@ -843,6 +851,82 @@ const AdminBilling = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Dice Challenge Success Modal */}
+      <AnimatePresence>
+        {showDiceModal && lastOrderDetails && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-md bg-card border border-border shadow-dramatic rounded-3xl p-6 overflow-hidden"
+            >
+              {/* Glowing decorative background */}
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-accent/20 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-primary/20 rounded-full blur-2xl pointer-events-none" />
+
+              <div className="text-center space-y-5">
+                <div className="inline-flex items-center justify-center w-14 h-14 bg-accent/10 text-accent rounded-full text-3xl animate-bounce">
+                  🎲
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="font-display text-2xl font-bold text-foreground">
+                    Matrix Dice Challenge!
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    This dine-in order of <span className="font-semibold text-accent">₹{lastOrderDetails.total}</span> qualifies for a free roll!
+                  </p>
+                </div>
+
+                {/* QR Code Section */}
+                <div className="flex flex-col items-center justify-center p-4 bg-muted/40 rounded-2xl border border-border/60">
+                  <div className="w-48 h-48 bg-white p-2.5 rounded-xl shadow-soft flex items-center justify-center relative">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=5&data=${encodeURIComponent(
+                        `${window.location.origin}/dice?amount=${lastOrderDetails.total}&order=${lastOrderDetails.id}`
+                      )}`}
+                      alt="Scan to roll"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mt-3">
+                    Customer scans QR code to roll on phone
+                  </span>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-3 pt-2">
+                  <Button
+                    onClick={() => {
+                      window.open(
+                        `/dice?amount=${lastOrderDetails.total}&order=${lastOrderDetails.id}`,
+                        "_blank"
+                      );
+                    }}
+                    className="w-full h-12 text-sm font-bold bg-gradient-to-r from-accent to-orange-500 hover:from-accent/90 hover:to-orange-500/90 text-white shadow-md shadow-accent/20 rounded-xl"
+                  >
+                    🖥️ Open Roll Page on Counter
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowDiceModal(false);
+                      setLastOrderDetails(null);
+                      handleClearBill();
+                    }}
+                    className="w-full h-12 text-sm font-semibold rounded-xl"
+                  >
+                    Done & Clear Bill
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
