@@ -334,7 +334,7 @@ const Checkout = () => {
             A WhatsApp confirmation has been sent to <span className="font-medium text-foreground">{formData.phone}</span>. You will receive it shortly! 🎉
           </p>
           
-          {orderType === "dine_in" && finalTotal >= 449 && (
+          {orderType === "dine_in" && finalTotal >= 599 && (
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
@@ -357,7 +357,7 @@ const Checkout = () => {
           )}
 
           <div className="space-y-3">
-            {orderType === "dine_in" && finalTotal >= 449 ? (
+            {orderType === "dine_in" && finalTotal >= 599 ? (
               <Button
                 variant="hero"
                 className="w-full h-14 text-lg bg-gradient-to-r from-accent via-orange-500 to-amber-500 hover:from-accent/90 hover:to-amber-500/90 text-white font-bold shadow-lg shadow-accent/30 animate-pulse flex items-center justify-center gap-2 rounded-2xl border-none"

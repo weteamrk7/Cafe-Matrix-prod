@@ -37,7 +37,7 @@ const DicePromo = () => {
             </p>
 
             <p className="text-muted-foreground max-w-xl text-base leading-relaxed">
-              Celebrate your dining experience with us! Spend **₹449 or above** at Cafe Matrix, scan your bill, and roll our virtual 3D dice at the counter to win instant free rewards.
+              Celebrate your dining experience with us! Spend **₹599 or above** at Cafe Matrix, scan your bill, and roll our virtual 3D dice at the counter to win instant free rewards.
             </p>
 
             {/* Rewards Grid */}
@@ -75,7 +75,7 @@ const DicePromo = () => {
               </Link>
               
               <span className="text-xs text-muted-foreground flex items-center gap-1.5 bg-muted/60 px-3 py-1.5 rounded-full border border-border">
-                <HelpCircle className="w-3.5 h-3.5" /> Must have active Dine-In bill of ₹449+
+                <HelpCircle className="w-3.5 h-3.5" /> Must have active Dine-In bill of ₹599+
               </span>
             </div>
           </div>

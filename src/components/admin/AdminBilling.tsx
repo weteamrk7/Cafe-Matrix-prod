@@ -194,7 +194,7 @@ const AdminBilling = () => {
     msg += `─────────────────\n`;
     msg += `💰 *Total Amount: ₹${grandTotal}*\n\n`;
 
-    if (orderId && deliveryAmount === 0 && grandTotal >= 449) {
+    if (orderId && deliveryAmount === 0 && grandTotal >= 599) {
       msg += `🎲 *Matrix Dice Challenge:*\nSince your dine-in bill is ₹${grandTotal}, you qualify for a free roll! Click here to roll and win a guaranteed reward:\nhttps://cafematrix.co.in/dice?amount=${grandTotal}&order=${orderId}\n\n`;
     }
 
@@ -271,8 +271,8 @@ const AdminBilling = () => {
       });
       playToastSound();
 
-      // Check if eligible for Dice Challenge (Dine-in and Total >= 449)
-      if (deliveryAmount === 0 && grandTotal >= 449) {
+      // Check if eligible for Dice Challenge (Dine-in and Total >= 599)
+      if (deliveryAmount === 0 && grandTotal >= 599) {
         setLastOrderDetails({ id: order.id, total: grandTotal });
         setShowDiceModal(true);
       } else {

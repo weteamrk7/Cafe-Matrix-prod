@@ -236,8 +236,8 @@ const Dice = () => {
   // Roll action
   const handleRollDice = async () => {
     const amount = parseFloat(billAmount);
-    if (isNaN(amount) || amount < 449) {
-      setErrorMsg("Minimum bill amount of ₹449 required.");
+    if (isNaN(amount) || amount < 599) {
+      setErrorMsg("Minimum bill amount of ₹599 required.");
       return;
     }
 
@@ -354,7 +354,7 @@ const Dice = () => {
             🎲 Roll Once, Win Every Time
           </h2>
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            Rolling is unlocked for dining bills of **₹449 or above**.
+            Rolling is unlocked for dining bills of **₹599 or above**.
           </p>
         </div>
 
