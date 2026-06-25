@@ -299,9 +299,13 @@ const Checkout = () => {
       clearCart();
       
       toast({ title: "Order placed successfully!" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Order error:", error);
-      toast({ title: "Failed to place order", variant: "destructive" });
+      toast({ 
+        title: "Failed to place order", 
+        description: error?.message || "Please check your network and try again.",
+        variant: "destructive" 
+      });
     } finally {
       setIsSubmitting(false);
     }
