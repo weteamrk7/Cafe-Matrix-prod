@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,10 +44,19 @@ const getOrCreateDeviceId = (): string => {
 
 const Dice = () => {
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   
   // State
   const [billAmount, setBillAmount] = useState<string>("");
+
+  useEffect(() => {
+    const amount = searchParams.get("amount");
+    if (amount) {
+      setBillAmount(amount);
+    }
+  }, [searchParams]);
+
   const [isRolling, setIsRolling] = useState<boolean>(false);
   const [hasRolled, setHasRolled] = useState<boolean>(false);
   const [diceValue, setDiceValue] = useState<number>(1);

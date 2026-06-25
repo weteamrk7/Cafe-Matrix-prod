@@ -325,6 +325,36 @@ const Checkout = () => {
           <p className="text-sm text-muted-foreground mb-6">
             A WhatsApp confirmation has been sent to <span className="font-medium text-foreground">{formData.phone}</span>. You will receive it shortly! 🎉
           </p>
+          
+          {orderType === "dine_in" && grandTotal >= 449 && (
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mb-8 p-5 rounded-2xl border border-accent/30 bg-accent/5 backdrop-blur-md relative overflow-hidden text-left"
+            >
+              <div className="absolute -top-10 -right-10 w-24 h-24 bg-accent/20 rounded-full blur-xl pointer-events-none" />
+              <div className="flex items-start gap-4">
+                <span className="text-3xl">🎲</span>
+                <div>
+                  <h3 className="font-display text-lg text-accent font-semibold mb-1">
+                    Matrix Dice Challenge!
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Since your dine-in bill is ₹{grandTotal}, you qualify for one free roll. Win a guaranteed reward!
+                  </p>
+                  <Button
+                    variant="hero"
+                    className="w-full bg-gradient-to-r from-accent to-orange-500 hover:from-accent/90 hover:to-orange-500/90 text-white font-medium shadow-md shadow-accent/20"
+                    onClick={() => navigate(`/dice?amount=${grandTotal}`)}
+                  >
+                    Roll the Dice Now!
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           <div className="space-y-3">
             <Button variant="hero" className="w-full" onClick={() => navigate("/")}>
               Back to Home
