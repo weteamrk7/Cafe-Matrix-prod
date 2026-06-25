@@ -161,7 +161,7 @@ const AdminBilling = () => {
   };
 
   // Build WhatsApp message
-  const buildWhatsAppMessage = (): string => {
+  const buildWhatsAppMessage = (orderId?: string): string => {
     const name = customerName.trim() || "Customer";
 
     let msg = `Hello ${name},\nHere is your order summary from *Cafe Matrix*:\n\n`;
@@ -191,6 +191,11 @@ const AdminBilling = () => {
 
     msg += `─────────────────\n`;
     msg += `💰 *Total Amount: ₹${grandTotal}*\n\n`;
+
+    if (orderId && deliveryAmount === 0 && grandTotal >= 449) {
+      msg += `🎲 *Matrix Dice Challenge:*\nSince your dine-in bill is ₹${grandTotal}, you qualify for a free roll! Click here to roll and win a guaranteed reward:\nhttps://cafematrix.co.in/dice?amount=${grandTotal}&order=${orderId}\n\n`;
+    }
+
     msg += `Thank you for ordering with *Cafe Matrix*! 🙏\nWe hope you enjoy your meal! 😊\n\n🌐 Visit us: www.cafematrix.co.in`;
 
     return msg;
@@ -253,7 +258,7 @@ const AdminBilling = () => {
       // 3. Open WhatsApp
       const cleaned = phoneNumber.replace(/\D/g, "");
       const fullNumber = `91${cleaned}`;
-      const message = encodeURIComponent(buildWhatsAppMessage());
+      const message = encodeURIComponent(buildWhatsAppMessage(order.id));
       const url = `https://wa.me/${fullNumber}?text=${message}`;
 
       window.open(url, "_blank");
