@@ -205,6 +205,42 @@ export type Database = {
         }
         Relationships: []
       }
+      dice_rolls: {
+        Row: {
+          id: string
+          reward_code: string
+          dice_value: number
+          reward_won: string
+          bill_amount: number
+          device_id: string
+          redeemed: boolean
+          redeemed_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          reward_code: string
+          dice_value: number
+          reward_won: string
+          bill_amount: number
+          device_id: string
+          redeemed?: boolean
+          redeemed_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          reward_code?: string
+          dice_value?: number
+          reward_won?: string
+          bill_amount?: number
+          device_id?: string
+          redeemed?: boolean
+          redeemed_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

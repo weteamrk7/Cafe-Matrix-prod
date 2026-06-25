@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
+import DicePromo from "@/components/DicePromo";
 import About from "@/components/About";
 import Menu from "@/components/Menu";
 import Gallery from "@/components/Gallery";
@@ -13,6 +14,7 @@ const Index = () => {
     <main className="overflow-x-hidden">
       <Header />
       <Hero />
+      <DicePromo />
       <About />
       <Menu />
       <Gallery />
