@@ -68,7 +68,7 @@ const DicePromo = () => {
             </div>
 
             <div className="pt-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <Link to="/dice" className="w-full sm:w-auto">
+              <Link to="/order" className="w-full sm:w-auto">
                 <Button variant="accent" size="xl" className="w-full sm:w-auto shadow-lg hover:shadow-xl shadow-accent/15">
                   Roll The Dice
                 </Button>
