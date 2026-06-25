@@ -77,6 +77,46 @@ const Dice = () => {
     const checkAbuseAndActiveRewards = async () => {
       setIsChecking(true);
       const deviceId = getOrCreateDeviceId();
+      const orderParam = searchParams.get("order");
+
+      // 1. If we have a specific order ID in the URL, verify if it has already been rolled
+      if (orderParam) {
+        try {
+          const { data, error } = await supabase
+            .from("dice_rolls")
+            .select("*")
+            .eq("order_id", orderParam)
+            .limit(1);
+
+          if (error) {
+            console.warn("Could not query order_id in dice_rolls:", error);
+          } else if (data && data.length > 0) {
+            // Already rolled for this order ID! Display it
+            const dbRoll = data[0];
+            const active: ActiveReward = {
+              reward_code: dbRoll.reward_code,
+              dice_value: dbRoll.dice_value,
+              reward_won: dbRoll.reward_won,
+              bill_amount: Number(dbRoll.bill_amount),
+              created_at: dbRoll.created_at,
+            };
+            setActiveReward(active);
+            setHasRolled(true);
+            setIsChecking(false);
+            return;
+          } else {
+            // Not rolled yet for this order! Allow rolling.
+            // Reset rolled state in case local storage has a cached roll from a previous order
+            setActiveReward(null);
+            setHasRolled(false);
+            setIsChecking(false);
+            return;
+          }
+        } catch (err) {
+          console.error("Failed to query order roll:", err);
+        }
+      }
+
       const localActive = localStorage.getItem("matrix_dice_active_reward");
       const lastRollTimeStr = localStorage.getItem("matrix_dice_last_roll_time");
 
@@ -132,7 +172,7 @@ const Dice = () => {
     };
 
     checkAbuseAndActiveRewards();
-  }, []);
+  }, [searchParams]);
 
   // Confetti Canvas Loop
   const startConfetti = () => {
@@ -248,6 +288,7 @@ const Dice = () => {
             reward_won: reward,
             bill_amount: amount,
             device_id: deviceId,
+            order_id: searchParams.get("order") || null,
             redeemed: false,
             created_at: timestamp,
           });

@@ -119,6 +119,7 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [finalTotal, setFinalTotal] = useState<number>(0);
+  const [finalOrderId, setFinalOrderId] = useState<string | null>(null);
   const [needsParcel, setNeedsParcel] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -293,6 +294,7 @@ const Checkout = () => {
       sendWhatsAppConfirmation(order);
 
       setFinalTotal(grandTotal);
+      setFinalOrderId(order.id);
       setOrderSuccess(true);
       clearCart();
       
@@ -337,30 +339,33 @@ const Checkout = () => {
             >
               <div className="absolute -top-10 -right-10 w-24 h-24 bg-accent/20 rounded-full blur-xl pointer-events-none" />
               <div className="flex items-start gap-4">
-                <span className="text-3xl">🎲</span>
+                <span className="text-3xl animate-bounce">🎲</span>
                 <div>
                   <h3 className="font-display text-lg text-accent font-semibold mb-1">
                     Matrix Dice Challenge!
                   </h3>
-                  <p className="text-xs text-muted-foreground mb-4">
+                  <p className="text-xs text-muted-foreground">
                     Since your dine-in bill is ₹{finalTotal}, you qualify for one free roll. Win a guaranteed reward!
                   </p>
-                  <Button
-                    variant="hero"
-                    className="w-full bg-gradient-to-r from-accent to-orange-500 hover:from-accent/90 hover:to-orange-500/90 text-white font-medium shadow-md shadow-accent/20"
-                    onClick={() => navigate(`/dice?amount=${finalTotal}`)}
-                  >
-                    Roll the Dice Now!
-                  </Button>
                 </div>
               </div>
             </motion.div>
           )}
 
           <div className="space-y-3">
-            <Button variant="hero" className="w-full" onClick={() => navigate("/")}>
-              Back to Home
-            </Button>
+            {orderType === "dine_in" && finalTotal >= 449 ? (
+              <Button
+                variant="hero"
+                className="w-full h-14 text-lg bg-gradient-to-r from-accent via-orange-500 to-amber-500 hover:from-accent/90 hover:to-amber-500/90 text-white font-bold shadow-lg shadow-accent/30 animate-pulse flex items-center justify-center gap-2 rounded-2xl border-none"
+                onClick={() => navigate(`/dice?amount=${finalTotal}&order=${finalOrderId}`)}
+              >
+                ROLL THE DICE NOW! 🎲
+              </Button>
+            ) : (
+              <Button variant="hero" className="w-full" onClick={() => navigate("/")}>
+                Back to Home
+              </Button>
+            )}
             <Button variant="outline" className="w-full" onClick={() => navigate("/order")}>
               Order More
             </Button>
