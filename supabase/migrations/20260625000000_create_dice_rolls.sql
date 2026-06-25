@@ -6,6 +6,7 @@ CREATE TABLE public.dice_rolls (
   reward_won TEXT NOT NULL,
   bill_amount NUMERIC NOT NULL,
   device_id TEXT NOT NULL,
+  order_id UUID REFERENCES public.orders(id) ON DELETE SET NULL,
   redeemed BOOLEAN NOT NULL DEFAULT false,
   redeemed_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
