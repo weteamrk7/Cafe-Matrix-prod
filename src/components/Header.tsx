@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, CalendarDays, ShoppingBag, Shield } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import OffersTicker from "./OffersTicker";
 
 const navLinks = [
   { label: "Menu", href: "/#menu" },
@@ -94,6 +95,7 @@ const Header = () => {
             )}
           </button>
         </div>
+        <OffersTicker />
       </motion.header>
 
       {/* Mobile Menu */}
