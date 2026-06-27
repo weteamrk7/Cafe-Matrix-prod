@@ -15,7 +15,7 @@ const OffersTicker = () => {
   const tickerItems = [...offers, ...offers];
 
   return (
-    <div className="w-full bg-primary border-t border-b border-primary-foreground/5 py-2.5 overflow-hidden flex items-center select-none z-40">
+    <div className="w-full bg-primary border-t border-b border-primary-foreground/5 py-3.5 overflow-hidden flex items-center select-none z-40">
       <motion.div
         animate={{ x: ["0%", "-50%"] }}
         transition={{
@@ -23,7 +23,7 @@ const OffersTicker = () => {
           duration: 35, // Smooth scrolling speed
           repeat: Infinity,
         }}
-        className="flex whitespace-nowrap gap-16 pr-16 text-[10px] sm:text-xs uppercase tracking-[0.15em] font-medium text-primary-foreground/95"
+        className="flex whitespace-nowrap gap-16 pr-16 text-[12px] sm:text-[14px] uppercase tracking-[0.12em] font-semibold text-primary-foreground/95"
       >
         {tickerItems.map((offer, idx) => (
           <span key={idx} className="flex items-center gap-16">
