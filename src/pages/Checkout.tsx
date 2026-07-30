@@ -113,7 +113,7 @@ const Checkout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const MIN_DELIVERY_ORDER = 250;
+  const MIN_DELIVERY_ORDER = 300;
   const canDeliver = totalPrice >= MIN_DELIVERY_ORDER;
   const [orderType, setOrderType] = useState<OrderType>(canDeliver ? "delivery" : "dine_in");
   const [isSubmitting, setIsSubmitting] = useState(false);
